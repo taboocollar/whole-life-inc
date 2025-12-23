@@ -8,12 +8,12 @@ Configure your NOTION_API_TOKEN and NOTION_DATABASE_ID in a .env file.
 
 import os
 import sys
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 from notion_client import Client
 from dotenv import load_dotenv
 
 
-def load_configuration() -> tuple[str, str]:
+def load_configuration() -> Tuple[str, str]:
     """
     Load Notion API configuration from environment variables.
     
