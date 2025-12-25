@@ -56,7 +56,7 @@ def initialize_notion_client(api_token: str) -> Client:
 
 def fetch_database_data(client: Client, database_id: str) -> List[Dict[str, Any]]:
     """
-    Fetch all pages from a Notion database.
+    Fetch all pages from a Notion database with error handling and retry logic.
     
     Args:
         client: Initialized Notion client
@@ -64,24 +64,42 @@ def fetch_database_data(client: Client, database_id: str) -> List[Dict[str, Any]
     
     Returns:
         List of database pages/entries
+        
+    Raises:
+        Exception: If unable to fetch data after retries
     """
     results = []
     has_more = True
     start_cursor = None
+    max_retries = 3
+    retry_delay = 2
     
     print(f"Fetching data from Notion database: {database_id}")
     
     while has_more:
-        response = client.databases.query(
-            database_id=database_id,
-            start_cursor=start_cursor
-        )
-        
-        results.extend(response.get("results", []))
-        has_more = response.get("has_more", False)
-        start_cursor = response.get("next_cursor")
-        
-        print(f"Fetched {len(response.get('results', []))} entries...")
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                response = client.databases.query(
+                    database_id=database_id,
+                    start_cursor=start_cursor
+                )
+                
+                results.extend(response.get("results", []))
+                has_more = response.get("has_more", False)
+                start_cursor = response.get("next_cursor")
+                
+                print(f"Fetched {len(response.get('results', []))} entries...")
+                break  # Success, exit retry loop
+                
+            except Exception as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    print(f"Failed to fetch data after {max_retries} attempts: {e}", file=sys.stderr)
+                    raise
+                print(f"Retry {retry_count}/{max_retries} after error: {e}", file=sys.stderr)
+                import time
+                time.sleep(retry_delay * retry_count)  # Exponential backoff
     
     print(f"Total entries fetched: {len(results)}")
     return results
