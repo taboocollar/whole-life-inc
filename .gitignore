@@ -41,3 +41,22 @@ pip-delete-this-directory.txt
 # OS
 .DS_Store
 Thumbs.db
+
+# Cloud sync configuration (contains secrets)
+config/cloud_sync_config.ini
+
+# Logs
+*.log
+logs/
+/tmp/
+
+# Backup directories
+*_backup_*/
+
+# Test outputs
+test_output/
+reorganization_stats.json
+
+# AI tools installation reports
+ai_tools_installation_report_*.txt
+
