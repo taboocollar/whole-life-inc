@@ -257,7 +257,7 @@ event_types:
    - Private database for sensitive data
    - Public database for shared resources
 
-3. **Yahoo Dropbox** (Assumed to be Dropbox)
+3. **Dropbox**
    - REST API v2 integration
    - Webhook-based change notifications
    - Smart Sync for large files

@@ -174,11 +174,17 @@ install_package() {
 # Runtime validation
 validate_installation() {
     local package=$1
+    local import_name=${2:-}
     
-    log_info "Validating $package installation..."
+    # If no import name specified, try to infer it
+    if [ -z "$import_name" ]; then
+        import_name=$(echo "$package" | tr '-' '_')
+    fi
+    
+    log_info "Validating $package installation (import: $import_name)..."
     
     # Try to import the package in Python
-    if $PYTHON_CMD -c "import ${package//-/_}" 2>> "$LOG_FILE"; then
+    if $PYTHON_CMD -c "import ${import_name}" 2>> "$LOG_FILE"; then
         log_success "$package validation successful"
         return 0
     else
@@ -193,7 +199,7 @@ install_ai_tools() {
     log_info "Log file: $LOG_FILE"
     
     # Define packages to install
-    # Format: "package_name|version|validate_name"
+    # Format: "package_name|version|import_name"
     declare -a packages=(
         "crewai|0.28.8|crewai"
         "langgraph|0.0.40|langgraph"
@@ -208,7 +214,7 @@ install_ai_tools() {
     local failed_packages=()
     
     for package_info in "${packages[@]}"; do
-        IFS='|' read -r package version validate_name <<< "$package_info"
+        IFS='|' read -r package version import_name <<< "$package_info"
         
         if ! install_package "$package" "$version"; then
             failed_packages+=("$package")
@@ -216,7 +222,7 @@ install_ai_tools() {
         fi
         
         # Runtime validation
-        if ! validate_installation "$validate_name"; then
+        if ! validate_installation "$package" "$import_name"; then
             failed_packages+=("$package")
         fi
     done
