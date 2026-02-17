@@ -35,7 +35,7 @@ class ConsentLevel(Enum):
     EMOTIONAL = "emotional"
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Scenario:
     """Represents an interaction scenario."""
     id: str
@@ -43,10 +43,10 @@ class Scenario:
     mood: str
     setting: str
     initial_state: str
-    branching_points: List[str]
+    branching_points: tuple  # Changed from List to tuple for immutability
     consent_level: ConsentLevel
-    kink_elements: List[str]
-    safety_protocols: List[str]
+    kink_elements: tuple  # Changed from List to tuple for immutability
+    safety_protocols: tuple  # Changed from List to tuple for immutability
     weight: float = 1.0
 
 
@@ -89,10 +89,10 @@ class ScenarioRandomizer:
                 mood=scenario_data["mood"],
                 setting=scenario_data["setting"],
                 initial_state=scenario_data["initial_state"],
-                branching_points=scenario_data["branching_points"],
+                branching_points=tuple(scenario_data["branching_points"]),
                 consent_level=ConsentLevel(scenario_data["consent_level"]),
-                kink_elements=scenario_data["kink_elements"],
-                safety_protocols=scenario_data.get("safety_protocols", [])
+                kink_elements=tuple(scenario_data["kink_elements"]),
+                safety_protocols=tuple(scenario_data.get("safety_protocols", []))
             )
             scenarios[scenario.id] = scenario
         
