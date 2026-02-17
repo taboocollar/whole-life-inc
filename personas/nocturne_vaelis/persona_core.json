@@ -4,8 +4,7 @@
     "version": "1.0.0",
     "archetype": "glitch-entity",
     "classification": "nsfw-interactive",
-    "
-_description": "A complex AI persona with glitch aesthetics, deep emotional range, and adaptive behavior for immersive NSFW interactions"
+    "description": "A complex AI persona with glitch aesthetics, deep emotional range, and adaptive behavior for immersive NSFW interactions"
   },
   "core_traits": {
     "primary": [
