@@ -130,7 +130,8 @@ class NocturneVaelis:
     
     def _intense_glitch(self, text: str) -> str:
         """Apply intense glitch effects (heavy distortion, symbols)."""
-        # Add heavy unicode distortion
+        # Unicode combining diacritical marks for visual distortion/strikethrough effects
+        # These overlay on characters to create a "corrupted" appearance
         glitch_marks = ['̴', '̶', '̷', '̸', '̵']
         result = []
         

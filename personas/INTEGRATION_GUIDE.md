@@ -194,7 +194,8 @@ class NocturneResponseGenerator:
         # Sanitize user_input before using it
         import html
         safe_input = html.escape(user_input).strip()[:200]
-        # This is a placeholder - don't include raw user input in production
+        # Example: This placeholder doesn't echo the input for security
+        # In production, your LLM would process safe_input internally without echoing
         return f"I sense the depth of your question..."
 ```
 
