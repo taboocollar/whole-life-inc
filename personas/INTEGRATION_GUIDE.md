@@ -257,8 +257,9 @@ class NocturneSession:
             )
         
         # Normal response
+        # In production, sanitize user_input before use (see Flask example below)
         return self.nocturne.apply_glitch_aesthetic(
-            f"Let's explore this together: {user_input}"
+            "Let's explore this together..."
         )
 ```
 
