@@ -534,7 +534,7 @@ import random
 
 class NocturneVaelis:
     def __init__(self, config_path='personas/nocturne_vaelis.json'):
-        with open(config_path, 'r') as f:
+        with open(config_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         self.config = data['persona']
         self.user_familiarity = 'new_user'  # Default

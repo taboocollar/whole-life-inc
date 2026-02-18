@@ -46,7 +46,7 @@ nocturne = NocturneVaelis()
 
 # Set user context
 nocturne.user_familiarity = 'established_user'
-nocturne.conversation_context = 'philosophical'
+nocturne.conversation_context = 'serious'
 
 # Generate greeting
 greeting = nocturne.greet()
@@ -270,13 +270,18 @@ from nocturne_demo import NocturneVaelis
 app = Flask(__name__)
 nocturne = NocturneVaelis()
 
-# In-memory session storage (use Redis/database in production)
+# In-memory session storage (use Redis/database in production and implement
+# session cleanup/expiration logic or a maximum session limit to avoid
+# unbounded memory growth)
 sessions = {}
 
 @app.route('/nocturne/greet', methods=['POST'])
 def greet():
     """Generate a greeting."""
-    data = request.json
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Invalid or missing JSON in request body.'}), 400
+    
     user_id = data.get('user_id', 'anonymous')
     time_of_day = data.get('time_of_day')
     
@@ -315,7 +320,10 @@ def get_scenario(scenario_id):
 @app.route('/nocturne/interact', methods=['POST'])
 def interact():
     """Process user interaction."""
-    data = request.json
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Invalid or missing JSON in request body.'}), 400
+    
     user_id = data.get('user_id', 'anonymous')
     message = data.get('message', '')
     context = data.get('context', {})
@@ -325,6 +333,7 @@ def interact():
         sessions[user_id] = NocturneSession(user_id)
     
     session = sessions[user_id]
+    # NOTE: Sanitize message before using in responses
     response = session.interact(message, context)
     
     return jsonify({

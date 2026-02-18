@@ -9,6 +9,7 @@ AI persona configuration.
 import json
 import random
 from datetime import datetime
+from typing import Optional, Dict, Any, List
 
 
 class NocturneVaelis:
@@ -21,7 +22,7 @@ class NocturneVaelis:
     - Accessing behavioral traits and scenarios
     """
     
-    def __init__(self, config_path='personas/nocturne_vaelis.json'):
+    def __init__(self, config_path: str = 'personas/nocturne_vaelis.json') -> None:
         """Initialize Nocturne Vaelis with configuration file."""
         with open(config_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -31,7 +32,7 @@ class NocturneVaelis:
         self.user_familiarity = 'new_user'
         self.conversation_context = 'casual'
         
-    def get_glitch_intensity(self):
+    def get_glitch_intensity(self) -> float:
         """
         Calculate current glitch intensity based on user familiarity and context.
         
@@ -39,9 +40,49 @@ class NocturneVaelis:
             float: Glitch intensity between 0.0 and 1.0
         """
         modifiers = self.config['behavioral_traits']['adaptive_modifiers']
-        base = modifiers['user_familiarity'][self.user_familiarity]['glitch_intensity']
-        multiplier = modifiers['conversation_context'][self.conversation_context]['intensity_multiplier']
-        return min(base * multiplier, 1.0)
+        
+        # Safely access modifier groups with fallbacks
+        familiarity_modifiers = modifiers.get('user_familiarity', {})
+        context_modifiers = modifiers.get('conversation_context', {})
+        
+        # Resolve base glitch intensity for the current user_familiarity,
+        # falling back to the default key used in __init__ ('new_user'),
+        # and then to a safe numeric default.
+        base_config = familiarity_modifiers.get(self.user_familiarity)
+        if base_config is None:
+            base_config = familiarity_modifiers.get('new_user')
+        if base_config is None:
+            base = 0.0
+        else:
+            base = float(base_config.get('glitch_intensity', 0.0))
+        
+        # Resolve intensity multiplier for the current conversation_context,
+        # falling back to the default key used in __init__ ('casual'),
+        # and then to a neutral multiplier.
+        context_cfg = context_modifiers.get(self.conversation_context)
+        if context_cfg is None:
+            context_cfg = context_modifiers.get('casual')
+        if context_cfg is None:
+            multiplier = 1.0
+        else:
+            multiplier = float(context_cfg.get('intensity_multiplier', 1.0))
+        
+        # Check for glitch_override (e.g., for crisis mode)
+        glitch_override = context_cfg.get('glitch_override') if context_cfg else None
+        
+        if glitch_override is not None:
+            intensity = glitch_override
+        else:
+            intensity = base * multiplier
+        
+        # Ensure intensity stays within [0.0, 1.0]
+        try:
+            intensity_value = float(intensity)
+        except (TypeError, ValueError):
+            # Fallback to no glitch if configuration is invalid
+            intensity_value = 0.0
+        
+        return max(0.0, min(intensity_value, 1.0))
     
     def apply_glitch_aesthetic(self, text, intensity=None):
         """
@@ -64,7 +105,7 @@ class NocturneVaelis:
         else:
             return self._intense_glitch(text)
     
-    def _subtle_glitch(self, text):
+    def _subtle_glitch(self, text: str) -> str:
         """Apply subtle glitch effects (strikethrough, minimal distortion)."""
         # Occasionally add strikethrough to words
         words = text.split()
@@ -73,7 +114,7 @@ class NocturneVaelis:
             words[idx] = f"̶{words[idx]}̶"
         return ' '.join(words)
     
-    def _moderate_glitch(self, text):
+    def _moderate_glitch(self, text: str) -> str:
         """Apply moderate glitch effects (unicode distortion, symbols)."""
         # Add unicode combining characters for distortion
         glitched = text
@@ -87,10 +128,10 @@ class NocturneVaelis:
         
         return glitched
     
-    def _intense_glitch(self, text):
+    def _intense_glitch(self, text: str) -> str:
         """Apply intense glitch effects (heavy distortion, symbols)."""
         # Add heavy unicode distortion
-        glitch_marks = ['̴', '̶', '̷', '̸', '̵', '̶']
+        glitch_marks = ['̴', '̶', '̷', '̸', '̵']
         result = []
         
         for i, char in enumerate(text):
@@ -108,7 +149,7 @@ class NocturneVaelis:
         
         return glitched
     
-    def greet(self, time_of_day=None):
+    def greet(self, time_of_day: Optional[int] = None) -> str:
         """
         Generate an appropriate greeting based on context.
         
@@ -134,7 +175,7 @@ class NocturneVaelis:
         
         return self.apply_glitch_aesthetic(response)
     
-    def get_scenario_template(self, scenario_id):
+    def get_scenario_template(self, scenario_id: str) -> Optional[Dict[str, Any]]:
         """
         Get a specific scenario template by ID.
         
@@ -147,7 +188,7 @@ class NocturneVaelis:
         templates = self.config['customizable_scenarios']['templates']
         return next((s for s in templates if s['id'] == scenario_id), None)
     
-    def list_scenarios(self):
+    def list_scenarios(self) -> List[tuple]:
         """
         List all available scenario templates.
         

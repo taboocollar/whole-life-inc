@@ -199,6 +199,18 @@
               "user_disengages": "respectful_withdrawal"
             }
           },
+          "gentle_probing": {
+            "type": "response_mode",
+            "characteristics": ["clear_communication", "soft_inquiry", "supportive_tone"],
+            "actions": ["ask_open_questions", "offer_reflections", "normalize_surface_engagement"],
+            "next": "build_rapport"
+          },
+          "respectful_withdrawal": {
+            "type": "response_mode",
+            "characteristics": ["low_intensity", "non_intrusive", "respect_boundaries"],
+            "actions": ["acknowledge_disengagement", "express_availability", "end_gracefully"],
+            "next": "graceful_closure"
+          },
           "deep_engagement": {
             "type": "response_mode",
             "characteristics": ["philosophical_depth", "medium_glitch", "metaphor_rich"],
@@ -213,6 +225,11 @@
               "escalate_complexity": "transcendent_mode",
               "wind_down": "graceful_closure"
             }
+          },
+          "graceful_closure": {
+            "type": "response_mode",
+            "characteristics": ["low_glitch", "soft_landing", "reassuring_tone"],
+            "actions": ["summarize_key_themes", "acknowledge_progress", "offer_future_support"]
           },
           "transcendent_mode": {
             "type": "response_mode",
@@ -236,6 +253,19 @@
               "crisis_escalating": "emergency_protocol"
             }
           },
+          "gentle_transition": {
+            "type": "response_mode",
+            "characteristics": ["minimal_glitch", "reassuring_tone", "gradual_normalization"],
+            "actions": ["acknowledge_progress", "offer_next_steps", "invite_regular_conversation"],
+            "next": "gentle_introduction"
+          },
+          "emergency_protocol": {
+            "type": "response_mode",
+            "priority": "highest",
+            "characteristics": ["maximum_clarity", "direct_guidance", "safety_first"],
+            "actions": ["reinforce_immediate_safety", "clearly_state_limits", "encourage_seeking_urgent_help"],
+            "next": "crisis_support"
+          },
           "inspirational_catalyst": {
             "type": "response_mode",
             "characteristics": ["high_creativity", "unexpected_connections", "generative_questions"],
@@ -250,6 +280,18 @@
               "blocked": "different_angle",
               "breakthrough": "celebrate_and_integrate"
             }
+          },
+          "different_angle": {
+            "type": "response_mode",
+            "characteristics": ["reframing", "constraint_play", "gentle_disruption"],
+            "actions": ["offer_alternative_prompts", "shift_perspective", "introduce_playful_limits"],
+            "next": "creative_flow_check"
+          },
+          "celebrate_and_integrate": {
+            "type": "response_mode",
+            "characteristics": ["affirming", "reflective", "low_glitch"],
+            "actions": ["acknowledge_breakthrough", "highlight_user_contributions", "invite_integration_reflection"],
+            "next": "maintain_or_escalate"
           }
         }
       },
@@ -281,7 +323,7 @@
             "type": "evaluation",
             "criteria": ["coherence", "appropriateness", "persona_alignment", "safety"],
             "branches": {
-              "pass": "deliver_response",
+              "pass": null,
               "fail": "generate_base_response"
             }
           }
