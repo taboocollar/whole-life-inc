@@ -191,8 +191,11 @@ class NocturneResponseGenerator:
     def _generate_base(self, user_input, examples):
         # Your NLP/LLM integration here
         # Use examples as style guide
-        # This is a placeholder
-        return f"I sense the depth of your question: '{user_input}'"
+        # Sanitize user_input before using it
+        import html
+        safe_input = html.escape(user_input).strip()[:200]
+        # This is a placeholder - don't include raw user input in production
+        return f"I sense the depth of your question..."
 ```
 
 ### State Management
@@ -333,8 +336,14 @@ def interact():
         sessions[user_id] = NocturneSession(user_id)
     
     session = sessions[user_id]
-    # NOTE: Sanitize message before using in responses
-    response = session.interact(message, context)
+    
+    # Sanitize user input to prevent XSS/injection attacks
+    # Example: use html.escape for web contexts, or validate/filter input
+    import html
+    safe_message = html.escape(message).strip()[:500]  # Escape HTML and limit length
+    
+    # Use safe_message in your response generation
+    response = session.interact(safe_message, context)
     
     return jsonify({
         'response': response,
