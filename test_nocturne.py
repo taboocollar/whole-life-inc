@@ -115,7 +115,7 @@ def test_interactive_triggers(data):
 
 
 def test_decision_trees(data):
-    """Test 5: Verify decision tree structure."""
+    """Test 5: Verify decision tree structure and cross-reference validity."""
     print("\nTest 5: Decision Trees...")
     trees = data['persona'].get('decision_trees', {})
     
@@ -126,7 +126,7 @@ def test_decision_trees(data):
         print(f"  ✗ Missing decision trees: {', '.join(missing)}")
         return False
     
-    # Validate tree structure
+    # Validate tree structure and cross-references
     for tree_name, tree in trees.items():
         if 'entry_point' not in tree or 'nodes' not in tree:
             print(f"  ✗ Tree '{tree_name}' missing entry_point or nodes")
@@ -137,6 +137,21 @@ def test_decision_trees(data):
         if entry not in tree['nodes']:
             print(f"  ✗ Tree '{tree_name}' entry_point '{entry}' not in nodes")
             return False
+        
+        # Validate cross-references: all branch targets should exist as nodes
+        nodes = tree['nodes']
+        for node_id, node_data in nodes.items():
+            if 'next' in node_data and node_data['next'] is not None:
+                if node_data['next'] not in nodes:
+                    print(f"  ✗ Tree '{tree_name}': Node '{node_id}' references missing node '{node_data['next']}' in 'next'")
+                    return False
+            
+            if 'branches' in node_data:
+                for branch_name, target_node in node_data['branches'].items():
+                    # Allow null/None for terminal branches
+                    if target_node is not None and target_node not in nodes:
+                        print(f"  ✗ Tree '{tree_name}': Node '{node_id}' branch '{branch_name}' references missing node '{target_node}'")
+                        return False
     
     print(f"  ✓ Decision trees valid ({len(trees)} trees)")
     return True
