@@ -5,19 +5,13 @@ This module implements comprehensive safety protocols, consent management,
 boundary handling, and wellbeing monitoring for ethical AI interactions.
 """
 
-import json
 from typing import Dict, List, Any, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-
-class ConsentLevel(Enum):
-    """Levels of consent required for different actions."""
-    NONE_REQUIRED = "none_required"
-    IMPLIED = "implied"
-    EXPLICIT_REQUIRED = "explicit_required"
-    EXPLICIT_NEGOTIATED = "explicit_negotiated"
+from personas.nocturne_vaelis.common import ConsentLevel  # noqa: F401 – re-exported
+from personas.nocturne_vaelis.config_manager import get_config
 
 
 class IntensityLevel(Enum):
@@ -487,8 +481,7 @@ class SafetyCoordinator:
     
     def __init__(self, persona_config_path: str):
         """Initialize safety coordinator."""
-        with open(persona_config_path, 'r') as f:
-            self.config = json.load(f)
+        self.config = get_config(persona_config_path)
         
         self.consent_framework = ConsentFramework()
         self.safeword_system = SafewordSystem()
