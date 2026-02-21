@@ -50,7 +50,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "The video file to analyse (mp4, mov, avi, mkv). Must be 60 seconds or shorter."
+                    "description": "The video file to analyze (mp4, mov, avi, mkv). Must be 60 seconds or shorter."
                   },
                   "user_needs": {
                     "type": "string",
@@ -71,7 +71,7 @@
                   "properties": {
                     "frame_count": {
                       "type": "integer",
-                      "description": "Number of frames that were analysed."
+                      "description": "Number of frames that were analyzed."
                     },
                     "computers_found": {
                       "type": "integer",

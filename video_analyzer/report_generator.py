@@ -205,7 +205,7 @@ class ReportGenerator:
         for keyword in ("overall recommendation", "recommendation:", "in summary"):
             idx = lower.find(keyword)
             if idx != -1:
-                snippet = full_text[idx: idx + 400].strip()
+                snippet = full_text[idx:idx + 400].strip()
                 lines = [ln.strip() for ln in snippet.splitlines() if ln.strip()]
                 if len(lines) > 1:
                     # Return the line *after* the header that contains the keyword
