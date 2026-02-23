@@ -11,6 +11,12 @@ Run locally::
 
     uvicorn video_analyzer.server:app --reload --port 8000
 
+Endpoints
+---------
+GET  /health          – liveness check
+POST /analyze-video   – upload a video file (≤60 s), returns analysis + report
+POST /analyze-frames  – upload individual image files, returns analysis + report
+
 Environment variables
 ---------------------
 OPENAI_API_KEY
@@ -21,18 +27,23 @@ MAX_VIDEO_DURATION
 
 from __future__ import annotations
 
+import base64
 import os
 import tempfile
-from typing import Optional
+from typing import List, Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .computer_analyzer import ComputerAnalyzer
-from .frame_extractor import FrameExtractor
+from .frame_extractor import FrameExtractor, VideoFrame
 from .report_generator import ReportGenerator
 
+
+# Maximum upload size: 100 MB
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
 app = FastAPI(
     title="Video Computer Analyzer",
@@ -43,6 +54,14 @@ app = FastAPI(
         "upgrade costs."
     ),
     version="1.0.0",
+)
+
+# Allow all origins so the API can be called from ChatGPT, browsers, etc.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -127,6 +146,11 @@ async def analyze_video(
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp_path = tmp.name
         content = await file.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB size limit.",
+            )
         tmp.write(content)
 
     try:
@@ -162,3 +186,92 @@ async def analyze_video(
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
+
+
+@app.post(
+    "/analyze-frames",
+    response_model=AnalyzeVideoResponse,
+    summary="Analyze individual image frames for computer hardware",
+)
+async def analyze_frames(
+    files: List[UploadFile] = File(
+        ...,
+        description="One or more image files (JPEG, PNG) to analyze.",
+    ),
+    user_needs: Optional[str] = Form(
+        default=None,
+        description=(
+            "Describe your intended workload / requirements so the report can "
+            "assess whether the computers meet your needs."
+        ),
+    ),
+) -> AnalyzeVideoResponse:
+    """Upload individual image frames and receive a hardware analysis + evaluation report.
+
+    Accepts one or more JPEG/PNG images (e.g. screenshots or photos of computers),
+    runs them through the OpenAI Vision analysis pipeline, and returns the same
+    structured report as ``/analyze-video``.
+    """
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="OPENAI_API_KEY environment variable is not set on the server.",
+        )
+
+    if not files:
+        raise HTTPException(status_code=400, detail="At least one image file is required.")
+
+    video_frames: List[VideoFrame] = []
+    for idx, upload in enumerate(files):
+        content = await upload.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File '{upload.filename}' exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB size limit.",
+            )
+        # Normalise to JPEG so VideoFrame.base64_jpeg always holds JPEG data,
+        # regardless of whether the user uploaded JPEG, PNG, or another format.
+        try:
+            from io import BytesIO
+            from PIL import Image as _Image
+            img = _Image.open(BytesIO(content)).convert("RGB")
+            buf = BytesIO()
+            img.save(buf, format="JPEG", quality=90)
+            jpeg_bytes = buf.getvalue()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File '{upload.filename}' could not be read as an image: {exc}",
+            )
+        video_frames.append(
+            VideoFrame(
+                index=idx,
+                timestamp_seconds=float(idx),
+                base64_jpeg=base64.b64encode(jpeg_bytes).decode("utf-8"),
+            )
+        )
+
+    analyzer = ComputerAnalyzer(api_key=api_key)
+    analysis = analyzer.analyze_frames(video_frames, user_needs=user_needs)
+
+    generator = ReportGenerator(api_key=api_key)
+    report = generator.generate_report(analysis, user_needs=user_needs)
+
+    computers = [
+        ComputerDetail(
+            id=c.id,
+            type=c.type,
+            visible_specs=c.visible_specs,
+            confidence=c.confidence,
+            notes=c.notes,
+        )
+        for c in analysis.computers
+    ]
+
+    return AnalyzeVideoResponse(
+        frame_count=len(video_frames),
+        computers_found=len(computers),
+        computers=computers,
+        report=report.full_text,
+    )
