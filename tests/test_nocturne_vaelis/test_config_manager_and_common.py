@@ -4,6 +4,8 @@ Unit tests for Nocturne Vaelis config_manager and common modules.
 
 import json
 import os
+import tempfile
+import threading
 import unittest
 
 from personas.nocturne_vaelis.config_manager import apply_delta, clear_cache, get_config
@@ -13,11 +15,11 @@ from personas.nocturne_vaelis.common import ConsentLevel
 class TestConfigManager(unittest.TestCase):
     """Test config caching and delta updates."""
 
-    CONFIG_PATH = "/tmp/test_config_manager.json"
-
     @classmethod
     def setUpClass(cls):
-        """Write a minimal config file for tests."""
+        """Write a minimal config file in a temp directory."""
+        cls._tmp_dir = tempfile.mkdtemp()
+        cls.CONFIG_PATH = os.path.join(cls._tmp_dir, "test_config_manager.json")
         config = {"version": "1.0", "key": "original"}
         with open(cls.CONFIG_PATH, "w") as f:
             json.dump(config, f)
@@ -26,6 +28,7 @@ class TestConfigManager(unittest.TestCase):
     def tearDownClass(cls):
         if os.path.exists(cls.CONFIG_PATH):
             os.remove(cls.CONFIG_PATH)
+        os.rmdir(cls._tmp_dir)
 
     def setUp(self):
         """Ensure cache is clean before each test."""
@@ -107,6 +110,31 @@ class TestConfigManager(unittest.TestCase):
         # After clearing, a fresh read should return an equal (not same) dict
         cfg = get_config(self.CONFIG_PATH)
         self.assertIsInstance(cfg, dict)
+
+
+    def test_thread_safety(self):
+        """Concurrent get_config calls must all receive the same cached object."""
+        results = []
+        errors = []
+
+        def fetch():
+            try:
+                results.append(get_config(self.CONFIG_PATH))
+            except Exception as exc:  # pragma: no cover
+                errors.append(exc)
+
+        threads = [threading.Thread(target=fetch) for _ in range(20)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(results), 20)
+        # All threads should share the identical cached object
+        first = results[0]
+        for r in results[1:]:
+            self.assertIs(r, first)
 
 
 class TestCommon(unittest.TestCase):
