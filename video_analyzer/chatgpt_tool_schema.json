@@ -1,0 +1,122 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Video Computer Analyzer",
+    "description": "Upload a short video (≤60 s) containing desktop or laptop computers. Receive a structured hardware analysis and an evaluation report that covers whether the machines meet your stated needs and estimates upgrade / future-proofing costs.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://YOUR_SERVER_HOSTNAME",
+      "description": "Replace with your deployed server URL"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "Health check",
+        "description": "Returns a simple status indicating the server is running.",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyze-video": {
+      "post": {
+        "operationId": "analyzeVideo",
+        "summary": "Analyze a video for computer hardware",
+        "description": "Upload a video file (mp4, mov, avi, mkv – maximum 60 seconds). The server extracts frames, identifies every computer visible in the video, reads or infers hardware specs, and returns a full evaluation report including whether each machine meets the user's stated needs and estimated upgrade costs.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The video file to analyze (mp4, mov, avi, mkv). Must be 60 seconds or shorter."
+                  },
+                  "user_needs": {
+                    "type": "string",
+                    "description": "Describe the intended workload so the report can assess suitability. Example: 'I need to run 4K video editing, multiple virtual machines, and occasional machine-learning training.'"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful analysis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "frame_count": {
+                      "type": "integer",
+                      "description": "Number of frames that were analyzed."
+                    },
+                    "computers_found": {
+                      "type": "integer",
+                      "description": "Number of distinct computers identified."
+                    },
+                    "computers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "type": {
+                            "type": "string",
+                            "enum": ["desktop", "laptop", "workstation", "server", "unknown"]
+                          },
+                          "visible_specs": {
+                            "type": "object",
+                            "description": "Hardware specs readable from the video frames."
+                          },
+                          "confidence": {
+                            "type": "number",
+                            "format": "float",
+                            "description": "Confidence score 0–1."
+                          },
+                          "notes": { "type": "string" }
+                        }
+                      }
+                    },
+                    "report": {
+                      "type": "string",
+                      "description": "Full plain-text evaluation report with upgrade recommendations and cost estimates."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request – e.g. video exceeds 60 seconds or cannot be read."
+          },
+          "503": {
+            "description": "Server misconfiguration – OPENAI_API_KEY not set."
+          }
+        }
+      }
+    }
+  }
+}
