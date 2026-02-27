@@ -38,7 +38,7 @@
       "post": {
         "operationId": "analyzeVideo",
         "summary": "Analyze a video for computer hardware",
-        "description": "Upload a video file (mp4, mov, avi, mkv – maximum 60 seconds). The server extracts frames, identifies every computer visible in the video, reads or infers hardware specs, and returns a full evaluation report including whether each machine meets the user's stated needs and estimated upgrade costs.",
+        "description": "Upload a video file (mp4, mov, avi, mkv – maximum 60 seconds, 100 MB). The server extracts frames, identifies every computer visible in the video, reads or infers hardware specs, and returns a full evaluation report including whether each machine meets the user's stated needs and estimated upgrade costs.",
         "requestBody": {
           "required": true,
           "content": {
@@ -50,7 +50,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "The video file to analyze (mp4, mov, avi, mkv). Must be 60 seconds or shorter."
+                    "description": "The video file to analyze (mp4, mov, avi, mkv). Must be 60 seconds or shorter and under 100 MB."
                   },
                   "user_needs": {
                     "type": "string",
@@ -66,54 +66,98 @@
             "description": "Successful analysis",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "frame_count": {
-                      "type": "integer",
-                      "description": "Number of frames that were analyzed."
-                    },
-                    "computers_found": {
-                      "type": "integer",
-                      "description": "Number of distinct computers identified."
-                    },
-                    "computers": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": { "type": "string" },
-                          "type": {
-                            "type": "string",
-                            "enum": ["desktop", "laptop", "workstation", "server", "unknown"]
-                          },
-                          "visible_specs": {
-                            "type": "object",
-                            "description": "Hardware specs readable from the video frames."
-                          },
-                          "confidence": {
-                            "type": "number",
-                            "format": "float",
-                            "description": "Confidence score 0–1."
-                          },
-                          "notes": { "type": "string" }
-                        }
-                      }
-                    },
-                    "report": {
-                      "type": "string",
-                      "description": "Full plain-text evaluation report with upgrade recommendations and cost estimates."
-                    }
+                "schema": { "$ref": "#/components/schemas/AnalyzeResponse" }
+              }
+            }
+          },
+          "400": { "description": "Bad request – e.g. video exceeds 60 seconds or cannot be read." },
+          "413": { "description": "File exceeds the 100 MB size limit." },
+          "503": { "description": "Server misconfiguration – OPENAI_API_KEY not set." }
+        }
+      }
+    },
+    "/analyze-frames": {
+      "post": {
+        "operationId": "analyzeFrames",
+        "summary": "Analyze individual image frames for computer hardware",
+        "description": "Upload one or more JPEG or PNG images (e.g. screenshots or photos of computers). The server identifies every computer visible in the images, reads or infers hardware specs, and returns a full evaluation report. Use this when you already have still images rather than a video.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["files"],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" },
+                    "description": "One or more image files (JPEG, PNG) to analyze. Each must be under 100 MB."
+                  },
+                  "user_needs": {
+                    "type": "string",
+                    "description": "Describe the intended workload so the report can assess suitability."
                   }
                 }
               }
             }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful analysis",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AnalyzeResponse" }
+              }
+            }
           },
-          "400": {
-            "description": "Bad request – e.g. video exceeds 60 seconds or cannot be read."
+          "400": { "description": "Bad request – no files provided or files cannot be read." },
+          "413": { "description": "One or more files exceed the 100 MB size limit." },
+          "503": { "description": "Server misconfiguration – OPENAI_API_KEY not set." }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalyzeResponse": {
+        "type": "object",
+        "properties": {
+          "frame_count": {
+            "type": "integer",
+            "description": "Number of frames that were analyzed."
           },
-          "503": {
-            "description": "Server misconfiguration – OPENAI_API_KEY not set."
+          "computers_found": {
+            "type": "integer",
+            "description": "Number of distinct computers identified."
+          },
+          "computers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["desktop", "laptop", "workstation", "server", "unknown"]
+                },
+                "visible_specs": {
+                  "type": "object",
+                  "description": "Hardware specs readable from the frames."
+                },
+                "confidence": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Confidence score 0–1."
+                },
+                "notes": { "type": "string" }
+              }
+            }
+          },
+          "report": {
+            "type": "string",
+            "description": "Full plain-text evaluation report with upgrade recommendations and cost estimates."
           }
         }
       }
