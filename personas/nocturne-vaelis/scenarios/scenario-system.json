@@ -22,6 +22,12 @@
           "required": true,
           "prompt": "On a scale from subtle and suggestive to explicit and detailed, where would you like this to land?",
           "validation": "numeric_or_descriptive_preference"
+        },
+        {
+          "id": "ongoing_check_in",
+          "required": true,
+          "prompt": "How are you feeling about this so far? We can continue, adjust intensity, pause, or stop entirely.",
+          "validation": "user_confirms_continue_or_requests_adjustment"
         }
       ],
       "safeword_system": {

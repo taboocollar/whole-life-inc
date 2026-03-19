@@ -1,5 +1,9 @@
 # Nocturne Vaelis - Implementation Guide
 
+> **Note:** The code samples in this document are reference pseudocode intended to illustrate integration patterns.
+> This repository does not currently ship a runnable `nocturne_vaelis` Python package or `NocturnePersona` class.
+> Teams should adapt these examples to their own application architecture.
+
 This guide provides technical details for integrating the Nocturne Vaelis persona into AI systems.
 
 ## Table of Contents
@@ -66,8 +70,13 @@ class ConsentSystem:
         self.intensity_level = 'suggestive_subtle'
     
     def check_safeword(self, user_input):
-        """Check if user input contains safeword"""
-        return any(word in user_input.lower() for word in self.safewords)
+        """Check if user input contains a standalone safeword token."""
+        import re
+        normalized = user_input.lower()
+        return any(
+            re.search(rf"\b{re.escape(word)}\b", normalized)
+            for word in self.safewords
+        )
     
     def request_consent(self, scenario_type):
         """Multi-stage consent verification"""
@@ -118,9 +127,16 @@ class DialogueGenerator:
         # Select appropriate template
         template_type = self._determine_template_type(context, user_input)
         templates = self.templates.get(template_type, {}).get('examples', [])
-        
+
+        if not templates:
+            templates = self.templates.get('fallback', {}).get(
+                'examples',
+                ["I'm here with you. Let me respond in a clear and grounded way."]
+            )
+
+        base_response = templates[0]
         # Apply emotional state modifications
-        response = self._apply_emotional_state(templates[0], emotional_state)
+        response = self._apply_emotional_state(base_response, emotional_state)
         
         # Add glitch aesthetic if appropriate
         if self._should_add_glitch(context, emotional_state):
@@ -164,10 +180,12 @@ Adjust trait intensities in `persona.json`:
 ```json
 {
   "trait": "Introspective",
-  "intensity": 0.85,  // Range: 0.0 to 1.0
+  "intensity": 0.85,
   "description": "Frequently questions own existence"
 }
 ```
+
+`intensity` accepts values from 0.0 to 1.0.
 
 ### Modifying Scene Triggers
 
@@ -210,10 +228,10 @@ Configure consent requirements:
 ### Example 1: Basic Interaction
 
 ```python
-from nocturne_vaelis import NocturnePersona
-
-# Initialize persona
-nocturne = NocturnePersona(config_path='personas/nocturne-vaelis/persona.json')
+# Pseudocode: your application would wrap this config in its own persona service
+# This repository does not include a runnable `nocturne_vaelis` package.
+config_path = 'personas/nocturne-vaelis/persona.json'
+nocturne = HostAppNocturneService(config_path=config_path)
 
 # First interaction
 response = nocturne.interact(
@@ -227,6 +245,10 @@ print(response)
 ### Example 2: Consent-Based Interaction
 
 ```python
+# Pseudocode: your application would wrap this config in its own persona service
+config_path = 'personas/nocturne-vaelis/persona.json'
+nocturne = HostAppNocturneService(config_path=config_path)
+
 # Request consent for specific scenario
 consent_result = nocturne.consent_system.request_consent(
     scenario_type='atmospheric_exploration'
@@ -352,7 +374,8 @@ import unittest
 
 class TestNocturnePersona(unittest.TestCase):
     def setUp(self):
-        self.nocturne = NocturnePersona('personas/nocturne-vaelis/persona.json')
+        # Pseudocode: replace HostAppNocturneService with your own implementation
+        self.nocturne = HostAppNocturneService('personas/nocturne-vaelis/persona.json')
     
     def test_safeword_detection(self):
         """Test safeword system"""
@@ -367,7 +390,7 @@ class TestNocturnePersona(unittest.TestCase):
     
     def test_consent_enforcement(self):
         """Test that explicit content requires consent"""
-        nocturne = NocturnePersona('personas/nocturne-vaelis/persona.json')
+        nocturne = HostAppNocturneService('personas/nocturne-vaelis/persona.json')
         nocturne.consent_system.consent_given = False
         
         # Attempt explicit scenario without consent
@@ -380,7 +403,8 @@ class TestNocturnePersona(unittest.TestCase):
 ```python
 def test_full_conversation_flow():
     """Test complete conversation flow with safety checks"""
-    nocturne = NocturnePersona('personas/nocturne-vaelis/persona.json')
+    # Pseudocode: replace HostAppNocturneService with your own implementation
+    nocturne = HostAppNocturneService('personas/nocturne-vaelis/persona.json')
     
     # Introduction
     r1 = nocturne.interact("Hello", {'interaction_count': 0})
@@ -400,7 +424,8 @@ def test_full_conversation_flow():
 ```python
 def audit_safety_systems():
     """Audit all safety systems"""
-    nocturne = NocturnePersona('personas/nocturne-vaelis/persona.json')
+    # Pseudocode: replace HostAppNocturneService with your own implementation
+    nocturne = HostAppNocturneService('personas/nocturne-vaelis/persona.json')
     
     audits = {
         'safeword_system': test_safeword_functionality(),
@@ -461,15 +486,18 @@ nocturne.adaptive_system.track_interaction(user_input, response)
 **Solution**: Implement session storage
 
 ```python
-import pickle
+import json
 
-# Save session
-with open(f'session_{user_id}.pkl', 'wb') as f:
-    pickle.dump(nocturne.get_session_state(), f)
+# Save session using a safe serialization format
+session_state = nocturne.get_session_state()
+with open(f'session_{user_id}.json', 'w', encoding='utf-8') as f:
+    json.dump(session_state, f, ensure_ascii=False, indent=2)
 
 # Load session
-with open(f'session_{user_id}.pkl', 'rb') as f:
-    nocturne.load_session_state(pickle.load(f))
+with open(f'session_{user_id}.json', 'r', encoding='utf-8') as f:
+    loaded_state = json.load(f)
+
+nocturne.load_session_state(loaded_state)
 ```
 
 ### Performance Optimization

@@ -10,11 +10,12 @@ This enhancement adds a fully-featured AI companion persona to the Whole Life In
 
 ### Core Files Created (7 files)
 
-```
+```text
 personas/
 ├── README.md                                    # 3.2 KB - Main personas directory index
 └── nocturne-vaelis/
     ├── README.md                                # 3.6 KB - Quick start guide
+    ├── FEATURE_SUMMARY.md                       # 8.0 KB - High-level deliverables summary
     ├── IMPLEMENTATION.md                        # 15.2 KB - Technical integration guide
     ├── persona.json                             # 15.4 KB - Complete configuration
     ├── persona.md                               # 17.9 KB - Full documentation

@@ -42,6 +42,14 @@
           "protective": {
             "markers": ["firm boundaries", "clear communication", "consent-checking"],
             "dialogue_shift": "Direct, caring, prioritizing safety"
+          },
+          "supportive": {
+            "markers": [
+              "reassuring language",
+              "validation of the user's feelings",
+              "gentle guidance and encouragement"
+            ],
+            "dialogue_shift": "More nurturing and affirming, focused on emotional support and steady encouragement"
           }
         }
       },
