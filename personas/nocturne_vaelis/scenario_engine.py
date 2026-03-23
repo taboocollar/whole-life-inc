@@ -5,11 +5,13 @@ This module handles dynamic scenario selection, randomization,
 and adaptive mode switching based on context and user interaction.
 """
 
-import json
 import random
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
+
+from personas.nocturne_vaelis.common import ConsentLevel  # noqa: F401 – re-exported
+from personas.nocturne_vaelis.config_manager import get_config
 
 
 class ScenarioCategory(Enum):
@@ -24,15 +26,6 @@ class ScenarioCategory(Enum):
     AFFIRMATION = "affirmation"
     HUMILIATION = "humiliation"
     EXPERIENCE = "experience"
-
-
-class ConsentLevel(Enum):
-    """Required consent levels for scenarios."""
-    NONE_REQUIRED = "none_required"
-    IMPLIED = "implied"
-    EXPLICIT_REQUIRED = "explicit_required"
-    EXPLICIT_NEGOTIATED = "explicit_negotiated"
-    EMOTIONAL = "emotional"
 
 
 @dataclass(frozen=True, eq=True)
@@ -72,8 +65,7 @@ class ScenarioRandomizer:
     
     def __init__(self, persona_config_path: str):
         """Initialize with persona configuration."""
-        with open(persona_config_path, 'r') as f:
-            self.config = json.load(f)
+        self.config = get_config(persona_config_path)
         
         self.scenarios = self._load_scenarios()
         self.weights = self._load_weights()
@@ -296,8 +288,7 @@ class ModeSwitcher:
     
     def __init__(self, persona_config_path: str):
         """Initialize with persona configuration."""
-        with open(persona_config_path, 'r') as f:
-            self.config = json.load(f)
+        self.config = get_config(persona_config_path)
         
         self.modes = self._load_modes()
         self.current_mode = "standard_interaction"

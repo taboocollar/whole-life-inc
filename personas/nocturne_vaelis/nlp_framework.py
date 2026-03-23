@@ -5,12 +5,13 @@ This module provides tone modulation, dialogue generation, and context-aware
 conversation management for the Nocturne Vaelis AI persona.
 """
 
-import json
 import random
 import re
 from typing import Dict, List, Any, Optional, Tuple
 from enum import Enum
 from dataclasses import dataclass
+
+from personas.nocturne_vaelis.config_manager import get_config
 
 
 class EmotionalState(Enum):
@@ -505,8 +506,7 @@ class PersonaEngine:
     
     def __init__(self, config_path: str):
         """Initialize persona engine with configuration."""
-        with open(config_path, 'r') as f:
-            self.persona_data = json.load(f)
+        self.persona_data = get_config(config_path)
         
         self.config = PersonaConfig(
             name=self.persona_data["persona"]["name"],
